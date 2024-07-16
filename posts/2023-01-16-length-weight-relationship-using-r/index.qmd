@@ -1,0 +1,253 @@
+---
+title: Length and weight relationship using R
+author: Jethro Emmanuel
+date: '2023-01-16'
+---
+
+# Introduction
+
+Have you ever wondered how the size of a fish relates to its weight? This simple question is at the heart of an important concept in fisheries science known as the length-weight relationship. By understanding how a fish's length correlates with its weight, scientists can gain valuable insights into the health, growth patterns, and overall condition of fish populations.
+
+In fisheries science, the length-weight relationship is a fundamental tool. It helps researchers and managers assess fish stocks, monitor environmental changes, and make decisions to support sustainable fishing practices. For example, changes in this relationship can indicate shifts in fish growth due to factors like habitat quality or fishing pressure.
+
+In this blog post, we'll explore how to analyze the length-weight relationship of fish using R, a versatile tool for data analysis. Let's dive in and discover how this relationship can help us understand and manage our fish populations better.
+
+# Required package
+
+In this tutorial, we will be using the `data.table` package, which, according to their website, "provides a high-performance version of base R’s `data.frame` with syntax and feature enhancements for ease of use, convenience and programming speed. To learn more about this package, visit the documentation website at https://rdatatable.gitlab.io/data.table/index.html
+
+```{r}
+library(data.table)
+```
+
+# The data
+
+In this tutorial, we will use a sample data of a particular species, and for the purpose of this post, we will assign this as "Species X." The data is available [here](https://gitlab.com/jethroppaPH/datasets/-/raw/master/repbio/reproductive-biology-data.csv).
+
+```{r}
+speciesx <- fread("reproductive-biology-data.csv")
+```
+
+Before proceeding to processing and analysis, one should not forget to inspect the data. The `head()` function in base R is used to retrieve the first few rows of a data frame or a matrix, or the first few elements of a vector. This function is useful for quickly inspecting the structure and content of a dataset.
+
+```{r}
+head(speciesx)
+```
+
+The `str()` function in base R stands for "structure" and is used to display the internal structure of R objects. It provides a concise summary of the object's type and structure, including its components and their types.
+
+```{r}
+str(speciesx)
+```
+
+# Data processing
+
+Based on the results of the above functions, some variables are needed to be converted to a particular data type. Conversion is needed later for the analysis and the preparation of graphs.
+
+The first step is to convert the `sex` column from character to factor. Let us first examine the unique values in this column.
+
+```{r, eval=FALSE}
+unique(speciesx$sex)
+```
+
+We can see that there are two unique values in this column: F and M, corresponding to female and male, respectively.
+
+Then use the `factor()` function to convert this to a factor. The `factor()` function is used to create a categorical or factor variable from a vector of values. Factors are used to represent categorical data, where each unique value in the vector is assigned a level, which is an integer representation. This is especially useful for statistical analysis and plotting, as it enables the correct handling of categorical variables.
+
+```{r}
+speciesx[, sex := factor(sex, levels = c("M", "F"), labels = c("M", "F"))]
+```
+
+Now that we are done with the data processing, we will now proceed to data visualization.
+
+# Length-weight relationship
+
+The Length-Weight Relationship (LWR) is a fundamental tool in fisheries research, stock assessment, and reproductive biology studies. It establishes the relationship between the length and weight of an individual fish and is a powerful indicator of growth patterns and body condition within a population.
+
+It is widely used to estimate fish weight based on length data, especially in situations where measuring weight for every fish is impractical. It's valuable for surveys and assessments, helping analyze growth rates, size structure, and population changes. In reproductive biology, LWR is crucial for assessing energy allocation in fish for reproduction. It provides insights into energy allocation for growth versus reproduction and reveals shifts in energy use as fish approach maturity and invest more in gonadal development.
+
+To proceed, select the needed columns for the analysis: the length, weight, and the sex columns.
+
+```{r}
+slw <- speciesx[, list(length, weight, sex)]
+```
+
+Compute the natural logarithm of the length and weight data. Taking the logarithm of both the length and weight transforms the data from an exponential relationship into a linear relationship. In a logarithmic scale, the exponential growth is represented as a straight line, making it easier to visualize and analyze the data.
+
+```{r}
+slw[, c("lnL", "lnW") := list(log(length), log(weight))]
+```
+
+The above code computes the logarithmic scale of the length and weight data, and store it in columns "lnL" and "lnW," respectively.
+
+Before we continue with our analysis, it's crucial to filter our dataset to include only male and female individuals. This is necessary because our dataset contains three unique values in the "sex" column, including an unspecified "U" category, which we are not focusing on for our current investigation. By selecting only the male and female individuals, we ensure that our analysis remains relevant and focused on the specific gender categories of interest.
+
+```{r}
+slw <- slw[sex %in% c("M", "F"), ]
+```
+
+Let's ensure we update the gender labels to their full names. This step is crucial for enhancing the clarity and comprehensibility of the graph we plan to create later. By replacing abbreviated labels with their complete names, we ensure that the audience can easily understand and interpret the information presented in the graph.
+
+```{r}
+slw[list(sex = c("M", "F"), to = c("Male", "Female")), on = "sex", sex := i.to]
+```
+
+Now, let us make a scatter plot for each sex using the base graphics. There are many packages to make plots in R, but I will stick to the base R graphics because there's no need to install additional packages. This is advantageous to avoid potential compatibility issues or reduce dependencies. Aside from this, base R graphics provide a high degree of flexibility to customize plots. Furthermore, users have complete control over the step-by-step process of creating a plot.
+
+Before we proceed, let us make a variable that contains the sexes, since we will use this for the `for` loop function. It is a control flow statement used to repeatedly execute a block of code. In this example, we use a `for` loop to iterate over the sex group in the data set and create a scatter plot for each group using the `plot()` function.
+
+```{r}
+unique_sex <- unique(slw$sex)
+```
+
+We will set the graphical parameters using the `par()` function. This function is used to set or query graphical parameters, allowing to control various aspects of plotting such as margins, font, axes, labels, and more. You can learn more about this by reading the documentation for this function (`?par`).
+
+```{r, eval=FALSE}
+par(mfrow = c(1, 2), mai = c(0.5, 0.5, 0.5, 0.2), omi = c(0.5, 0.5, 0, 0), 
+    mgp = c(2.5, 0.5, 0))
+```
+
+Here's a breakdown of the parameters being set:
+
+1. `mfrow = c(1, 2)`: This sets the layout of plots to be arranged in 1 row and 2 columns, meaning that subsequent plots will be arranged side by side horizontally.
+
+2. `mai = c(0.5, 0.5, 0.5, 0.2)`: This sets the margin size for the individual plots. The `mai` parameter stands for "margin size" and takes a vector of four numerical values representing the margin sizes (bottom, left, top, right). In this case, the bottom, left, and top margins are set to 0.5 inches, while the right margin is set to 0.2 inches.
+
+3. `omi = c(0.5, 0.5, 0, 0)`: This sets the outer margin size for the entire layout of plots. The `omi` parameter stands for "outer margin size" and takes a vector of four numerical values representing the margin sizes (bottom, left, top, right). In this case, the bottom and left outer margins are set to 0.5 inches, while the top and right outer margins are set to 0 inches.
+
+4. `mgp = c(2.5, 0.5, 0)`: This sets the margin line for the axis title and labels. The `mgp` parameter stands for "margin line for the axis title and labels" and takes a vector of three numerical values representing the margin sizes (title, axis labels, axis line). In this case, the title margin is set to 2.5, the axis labels margin is set to 0.5, and the axis line margin is set to 0.
+
+Then, we will now make the scatter plot. The main usage of a scatter plot for determining the length-weight relationship in biology, particularly in studies related to fish or other organisms, is to visually inspect the pattern of association between the length (independent variable) and weight (dependent variable) of the organisms.
+
+```{r, eval=FALSE}
+for(i in 1:length(unique_sex)){
+  x <- slw[slw$sex == unique_sex[i], ]
+  plot(x$lnW ~ x$lnL, las = 1, tcl = -0.2, ylim = c(1, 6), xlim = c(1, 6),
+       ann = FALSE, axes = FALSE, col = "blue4")
+  abline(lm(x$lnW ~ x$lnL, data = x), col = "coral1", lwd = 3)
+  mtext(unique_sex[i],
+        side = 3, outer = FALSE, line = 0.25, font = 3)
+  axis(side = 1, at = seq(1, 6, 1), label = seq(1, 6, 1), las = 1, 
+       tcl = -0.2)
+  axis(side = 2, at = seq(1, 6, 1), label = seq(1, 6, 1), las = 1, 
+       tcl = -0.2)
+  text(x = 4, y = 1.75, cex = 0.5,
+       labels = eval(bquote(expression(italic(
+         W == .(round(exp(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$coefficients[[1]]), digits = 5)) ~
+           L^.(round(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$coefficients[[2]], digits = 2))*"," ~
+           r^2 == .(round(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$r.squared, digits = 3)))))))
+}
+
+mtext("ln Weight (g)", side = 2, adj = 0.5, font = 2, cex = 0.8,
+      outer = TRUE, xpd = TRUE)
+
+mtext("ln Length (cm)", side = 1, adj = 0.5, font = 2, cex = 0.8,
+      outer = TRUE, xpd = TRUE)
+```
+
+Here's a brief explanation of what each part of the code does:
+
+1. Loop through unique sexes
+
+```{r, eval=FALSE}
+for(i in 1:length(unique_sex)){
+```
+
+This loop iterates over each unique sex in the `unique_sex` vector.
+
+2. Filter data by sex
+
+```{r, eval=FALSE}
+x <- slw[slw$sex == unique_sex[i], ]
+```
+
+This line filters the `slw` dataframe to only include rows where the sex column matches the current `unique_sex[i]` value.
+
+3. Plot data
+
+```{r, eval=FALSE}
+plot(x$lnW ~ x$lnL, las = 1, tcl = -0.2, ylim = c(1, 6), xlim = c(1, 6),
+       ann = FALSE, axes = FALSE, col = "blue4")
+```
+
+This line creates a scatter plot of `lnW` (log weight) against `lnL` (log length) for the filtered data. The plot has no annotations or axes, and the points are colored `blue4`.
+
+4. Add regression line
+
+```{r, eval=FALSE}
+abline(lm(x$lnW ~ x$lnL, data = x), col = "coral1", lwd = 3)
+```
+
+This line adds a linear regression line (fit to the filtered data) to the plot in `coral1` color with a line width of 3.
+
+5. Add sex label
+
+```{r, eval=FALSE}
+mtext(unique_sex[i], side = 3, outer = FALSE, line = 0.25, font = 3)
+```
+
+This line adds a label to the top of the plot indicating the current sex being plotted.
+
+6. Add axes
+
+```{r, eval=FALSE}
+axis(side = 1, at = seq(1, 6, 1), label = seq(1, 6, 1), las = 1, tcl = -0.2)
+axis(side = 2, at = seq(1, 6, 1), label = seq(1, 6, 1), las = 1, tcl = -0.2)
+```
+
+These lines add the x-axis and y-axis to the plot with ticks and labels from 1 to 6.
+
+7. Add regression equation and R-squared
+
+```{r, eval=FALSE}
+text(x = 4, y = 1.75, cex = 0.5,
+     labels = eval(bquote(expression(italic(
+       W == .(round(exp(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$coefficients[[1]]), digits = 5)) ~
+         L^.(round(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$coefficients[[2]], digits = 2))*"," ~
+         r^2 == .(round(summary(lm(lnW ~ lnL, x[sex == unique_sex[i], ]))$r.squared, digits = 3)))))))
+```
+
+This line adds text to the plot displaying the regression equation (W = q * L^b) (see Sparre and Venema (1998)) and the R-squared value of the fit. The equation and R-squared are dynamically calculated for each sex-specific subset of data.
+
+8. Add overall y-axis label
+
+```{r, eval=FALSE}
+mtext("ln Weight (g)", side = 2, adj = 0.5, font = 2, cex = 0.8,
+      outer = TRUE, xpd = TRUE)
+```
+
+This line adds an overall y-axis label "ln Weight (g)" to the outer margin of the plot area.
+
+9. Add overall x-axis label
+
+```{r, eval=FALSE}
+mtext("ln Length (cm)", side = 1, adj = 0.5, font = 2, cex = 0.8,
+      outer = TRUE, xpd = TRUE)
+```
+
+This line adds an overall x-axis label "ln Length (cm)" to the outer margin of the plot area.
+
+This is the output of the above code:
+
+![](images/LW.png)
+
+The code snippet above generates a series of scatter plots with fitted regression lines for subsets of a data frame `slw` based on different values of the variable `sex`.
+
+To verify the results of the linear regression, run the following code:
+
+```{r}
+slrel <- slw[, c(reg.1 = as.list(coef(lm(lnW ~ lnL)))), by = sex]
+
+print(slrel)
+```
+### Interpretation
+
+In analyzing the length-weight relationships of fish, distinct regression equations were derived for males and females based on empirical data. The equation for male fish,`ln(Weight) = -4.129150 + 2.775887 ln(Length)`, and for female fish, `ln(Weight) = -5.474374 + 3.258168 ln(Length)`, reflect different growth dynamics. These equations correspond to power functions `W = 0.0161 L^{2.78}` for males and `W = 0.00419 L^{3.26}` for females, aligning with the length-weight relationship framework (`W = qL^b`) discussed by Sparre and Venema (1998). According to this framework, the condition factor `q`, which adjusts the relationship based on population characteristics, is derived from the intercept `a` of the regression equation using `q = exp(a)`. The intercept `a` sets the baseline `ln⁡(Weight)` when `ln⁡(Length)` is zero, while the slope determines how `ln⁡(Weight)` changes with `ln⁡(Length)`. For male fish, the slope of 2.775887 indicates that weight increases by approximately 2.775887 units with each unit increase in length, whereas for female fish, with a slope of 3.258168, weight increases by approximately 3.258168 units per unit increase in length. This disparity in slopes suggests distinct growth dynamics between male and female fish, reflected in their respective growth exponents `b` of 2.78 and 3.26.
+
+### Biological Insight
+
+The higher slope for female fish (3.258168) compared to male fish (2.775887) suggests that female fish tend to gain weight more rapidly with increasing length than male fish. This could indicate differences in growth patterns or body composition between the sexes, which is valuable information for fisheries management and biological studies.
+
+# Reference
+
+Sparre P, Venema SC. 1998. Introduction to tropical fish stock assessment, part 1: manual. Rome: Food and Agriculture Organization of the United Nations (FAO fisheries technical paper).

@@ -1,0 +1,11 @@
+<html>
+<head><title>Papers</title></head>
+<body>
+    <h2>Papers</h2>
+    Click "[PDF]" to download each paper.
+    <hr>
+    <h3>2020</h3>
+    <p>Lanzuela NSB, Gallego EM, and <strong>Baltar JEPB</strong>. 2020. Reproductive biological performance of <em>Otolithes ruber</em> (Bloch and Schneider 1801) in San Miguel Bay, Philippines. <em>The Philippine Journal of Fisheries</em>; 27(2):1-10. <a href='https://doi.org/10.31398/tpjf/27.2.2019C0006'>https://doi.org/10.31398/tpjf/27.2.2019C0006</a> <a href='lanzuela2020.pdf'>[PDF]</a></p>
+</body>
+</html>
+

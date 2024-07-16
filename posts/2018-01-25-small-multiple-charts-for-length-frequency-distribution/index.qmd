@@ -1,0 +1,242 @@
+---
+title: Small multiple charts for length frequency distribution
+author: Jethro Emmanuel
+date: '2018-01-25'
+---
+
+This tutorial continues from the [previous one](https://jethroemmanuel.netlify.app/posts/2017-12-16-histogram-of-length-frequency-distribution/), where we created a histogram with annotations for length-at-first maturity, juveniles, mature, and mega-spawners. In this tutorial, we will learn how to display a subset of the data, also known as *small multiples*. This type of graph is useful for comparing data across groups, such as the length frequency distribution of a species by fishing gear.
+
+## Preliminaries
+
+To begin, let us load the required packages.
+
+```{r}
+library(data.table)
+```
+
+We will use again the data of *Coregonus artedii*.
+
+```{r}
+cisco_data <- data.table::fread("ciscoTL.csv")
+```
+
+Additionally, we will use the objects (variables) from the previous tutorial:
+
+```{r}
+class_interval <- 1
+cisco_lm_cm <- 17.1
+```
+
+```{r, echo=FALSE}
+cisco_data[, length_cm := length / 10]
+brks <- seq(0, ceiling(max(cisco_data$length_cm)), by = class_interval)
+cisco_data[, bins := cut(length_cm, brks, right = FALSE)]
+cisco_data[, bins := gsub("[\\[\\)]", "", bins)]
+cisco_data[, c("llimit", "ulimit") := tstrsplit(bins, ",", fixed = TRUE)]
+cisco_data[, c("llimit", "ulimit") := lapply(.SD, as.numeric), .SDcols = c("llimit", "ulimit")]
+cisco_data[, midlength := (llimit + ulimit) / 2]
+```
+
+## Plotting
+
+### Length frequency distribution by fishing gear
+
+We will now display the length frequency distribution by gear ID. There are 9 fishing gears used to catch this species in our data.
+
+```{r, warning=FALSE, message=FALSE}
+# Get the unique fishing gears in the data
+unique_gears <- unique(cisco_data$gearid)
+
+# Prepare histogram data for each Gear ID with specified breaks
+gear_hist_data <- lapply(unique_gears, function(gear) {
+  hist(subset(cisco_data, gearid == gear)$length_cm, breaks = brks, plot = FALSE)
+})
+
+# Find the maximum frequency across all gears
+max_frequency <- max(sapply(gear_hist_data, function(hist_data) {
+  max(hist_data$counts)
+}))
+
+# get the number of unique fishing gears
+num_gears <- length(unique_gears)
+
+# Calculate layout dimensions
+num_cols_gears <- ceiling(sqrt(num_gears))
+num_rows_gears <- ceiling(num_gears / num_cols_gears)
+
+par(mfrow = c(num_rows_gears, num_cols_gears), mai = c(0.5, 0.5, 0.35, 0.5), 
+    omi = c(0.25, 0.25, 0.5, 0.5), mgp = c(2.5, 0.5, 0))
+
+# Plot histograms with dynamic y-axis limits
+for (i in 1:length(unique_gears)) {
+  hist(subset(cisco_data, gearid == unique_gears[i])$length_cm,
+       breaks = brks,
+       freq = TRUE,
+       ann = FALSE,
+       ylim = c(0, max_frequency),
+       col = "lightblue",
+       border = "black")
+  mtext(unique_gears[i], side = 3, line = 0.25, font = 3, outer = FALSE)
+}
+
+mtext("Length (in cm)", side = 1, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext("Frequency", side = 2, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext(expression(paste("Length Frequency of Cisco (", italic("Coregonus artedi"), ") per Gear")),
+      side = 3, font = 2, adj = 0.5, cex = 1.2, outer = TRUE, xpd = TRUE)
+```
+
+Let's break down and explain what each section of this code does:
+
+1. Identify unique gear IDs
+
+```{r, eval=FALSE}
+unique_gears <- unique(cisco_data$gearid)
+```
+
+This code identifies the unique gear IDs present in the dataset `cisco_data`. `unique(cisco_data$gearid)` returns a vector of unique gear IDs, which is stored in the variable `unique_gears`.
+
+2. Prepare histogram data for each gear ID
+
+```{r, eval=FALSE}
+# Prepare histogram data for each Gear ID with specified breaks
+gear_hist_data <- lapply(unique_gears, function(gear) {
+  hist(subset(cisco_data, gearid == gear)$length_cm, breaks = brks, plot = FALSE)
+})
+```
+
+This section uses `lapply()` to iterate over each unique gear ID, generating histogram data for the length of fish (`length_cm`) caught by each gear. The `hist()` function calculates the histogram without plotting it (`plot = FALSE`), and the results are stored in `gear_hist_data`. The histograms use predefined breaks (`brks`).
+
+3. Find the maximum frequency across all gears
+
+```{r, eval=FALSE}
+# Find the maximum frequency across all gears
+max_frequency <- max(sapply(gear_hist_data, function(hist_data) {
+  max(hist_data$counts)
+}))
+```
+
+This calculates the maximum frequency (the highest count in any bin of the histograms) across all gears. `sapply()` is used to extract the maximum count from each histogram's counts vector, and `max()` finds the highest value among these maxima, stored in `max_frequency`.
+
+4. Calculate layout dimensions
+
+```{r, eval=FALSE}
+# Get the number of unique fishing gears
+num_gears <- length(unique_gears)
+
+# Calculate layout dimensions
+num_cols_gears <- ceiling(sqrt(num_gears))
+num_rows_gears <- ceiling(num_gears / num_cols_gears)
+```
+
+This part calculates the layout dimensions for plotting multiple histograms. It determines the number of rows and columns needed to fit all histograms in a grid, aiming for a nearly square layout. `num_cols_gears` and `num_rows_gears` represent the number of columns and rows in the grid, respectively.
+
+5. Set up plotting area
+
+```{r, eval=FALSE}
+par(mfrow = c(num_rows_gears, num_cols_gears), mai = c(0.5, 0.5, 0.35, 0.5), 
+    omi = c(0.25, 0.25, 0.5, 0.5), mgp = c(2.5, 0.5, 0))
+```
+
+This configures the plotting parameters using par:
+
+- `mfrow = c(num_rows_gears, num_cols_gears)` sets the layout to a grid with the specified number of rows and columns.
+- `mai` specifies the margins of individual plots (bottom, left, top, right), in inches.
+- `omi` sets the outer margins for the entire plotting area, in inches.
+- `mgp` adjusts the margin line settings for axis labels.
+
+6. Plot histograms
+
+```{r, eval=FALSE}
+# Plot histograms with dynamic y-axis limits
+for (i in 1:length(unique_gears)) {
+  hist(subset(cisco_data, gearid == unique_gears[i])$length_cm,
+       breaks = brks,
+       freq = TRUE,
+       ann = FALSE,
+       ylim = c(0, max_frequency),
+       col = "lightblue",
+       border = "black")
+  mtext(unique_gears[i], side = 3, line = 0.25, font = 3, outer = FALSE)
+}
+```
+
+This loop iterates over each unique Gear ID, plotting a histogram for each one:
+
+- `subset(cisco_data, gearid == unique_gears[i])$length_cm` extracts the length data for the current gear.
+- `breaks = brks` uses the predefined breaks.
+- `ylim = c(0, max_frequency)` sets the y-axis limit to the maximum frequency found earlier.
+- `col = "lightblue"` and `border = "black"` set the colors of the histogram bars and borders.
+- `mtext(unique_gears[i], side = 3, line = 0.25, font = 3, outer = FALSE)` adds the Gear ID as a title above each histogram.
+
+7. Add common axis labels and title
+
+```{r, eval=FALSE}
+mtext("Length (in cm)", side = 1, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext("Frequency", side = 2, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext(expression(paste("Length Frequency of Cisco (", italic("Coregonus artedi"), ") per Gear")),
+      side = 3, font = 2, adj = 0.5, cex = 1.2, outer = TRUE, xpd = TRUE)
+```
+
+### Length frequency distribution by year
+
+To gain further insights, we will analyze the length frequencies of fish caught per year. Given the extensive dataset spanning 26 years, we will focus on a subset of five years for simplicity and clarity.
+
+For this tutorial, we will create a new data frame focusing on the years 2002, 2003, 2004, 2005, and 2006.
+
+```{r}
+cisco_data5 <- cisco_data[year4 %in% c(2002, 2003, 2004, 2005, 2006)]
+```
+
+This code filters the original dataset to include only the data from the specified years, storing the result in `cisco_data5`.
+
+Here's how to plot a histogram for each year. I won't go into detail about each line of code, as the process is similar to what was explained earlier. The primary differences are the data source and variable names.
+
+```{r, warning=FALSE, message=FALSE}
+# Get the unique years in the data
+unique_years <- unique(cisco_data5$year4)
+
+# Prepare histogram data for each year with specified breaks
+year_hist_data <- lapply(unique_years, function(year) {
+  hist(subset(cisco_data5, year4 == year)$length_cm, breaks = brks, plot = FALSE)
+})
+
+# Find the maximum frequency across all years
+max_frequency <- max(sapply(year_hist_data, function(hist_data) {
+  max(hist_data$counts)
+}))
+
+# get the number of unique years
+num_years <- length(unique_years)
+
+# Calculate layout dimensions
+num_cols_years <- ceiling(sqrt(num_years))
+num_rows_years <- ceiling(num_years / num_cols_years)
+
+par(mfrow = c(num_rows_years, num_cols_years), mai = c(0.5, 0.5, 0.5, 0.2), 
+    omi = c(0.25, 0.25, 0.5, 0.25), mgp = c(2.5, 0.5, 0))
+
+for (i in 1:length(unique_years)) {
+  hist(subset(cisco_data, year4 == unique_years[i])$length_cm,
+       breaks = brks,
+       freq = TRUE,
+       ann = FALSE,
+       ylim = c(0, max_frequency),
+       col = "lightblue",
+       border = "black")
+  mtext(unique_years[i], side = 3, line = 0.25, font = 3, outer = FALSE)
+}
+
+mtext("Length (in cm)", side = 1, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext("Frequency", side = 2, font = 2, adj = 0.5, outer = TRUE, xpd = TRUE)
+mtext(expression(paste("Length frequency of Cisco (", italic("Coregonus artedi"), ") per Year")), 
+      side = 3, font = 2, adj = 0.5, cex = 1.2, outer = TRUE, xpd = TRUE)
+
+```
+
+## Conclusion
+
+Congratulations! You've successfully created a small multiples plot using base R graphics functions. This process is straightforward, particularly when subsetting a single variable.
+
+One of the greatest advantages of this method is its reproducibility. Since the plot is generated from the data frame rather than individual values, you can easily update the original data without needing to make manual adjustments to the plot.
+
+I hope you found this short tutorial enjoyable!

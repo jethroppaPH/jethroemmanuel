@@ -1,0 +1,204 @@
+---
+title: Histogram of length frequency distribution
+author: Jethro Emmanuel
+date: '2017-12-16'
+---
+
+```{r, setup, echo=FALSE, message=FALSE, warning=FALSE}
+library(data.table)
+
+cisco_data <- data.table::fread("ciscoTL.csv")
+```
+
+**Update:** January 16, 2018. Updated the post to include the data from `FSA` and `FSAdata` packages.
+
+In our work, presenting the status of fish stocks is very important. It can help local fishers as well as Local Government Units (LGUs) in crafting an ordinance or measures to manage the fish stocks in their respective jurisdictions. The data cannot tell the real status unless it has a visual form, such as a graph or chart.
+
+One of the graphs produced by my colleagues is based on the length-frequency distribution data. They used Microsoft Excel to create the graph, and manually drew rectangles inside the plot to differentiate the lengths of immature, mature, and mega-spawner fish of a single species.
+
+![](sample-graph.png)
+
+Above is an example of the plot, but it is stacked according to the fishing gear used to catch that particular species (not shown).
+
+I find this tiring, especially in the context of reproducibility. If there are any changes to the raw data, they would have to perform a series of pivoting operations and manually produce the graph.
+
+Therefore, I tried to recreate the graph, with a few modifications, using `R` and the base R graphics.
+
+In this tutorial, I wanted to produce a histogram of length frequency using the base R graphics system in `R`.
+
+## Preliminary Steps
+
+To follow this tutorial, you will need to install the following package. 
+
+
+```{r, eval=FALSE}
+install.packages("data.table")
+```
+
+Once installed, you can load it by typing:
+
+
+```{r, eval=FALSE}
+library(data.table)
+```
+
+## The Data
+
+I used the *CiscoTL* data from the `FSAdata` repository. The meta-documentation for this data can be found [here](http://derekogle.com/fishR/data/data-html/CiscoTL.html). I saved the data into a CSV file, which you can download [here](https://gitlab.com/jethroppaPH/datasets/raw/master/FSAdata/ciscoTL.csv).
+
+You can load the data into your R environment by running:
+
+```{r, eval=FALSE}
+cisco_data <- data.table::fread("ciscoTL.csv")
+```
+
+## The Process
+
+A histogram is a graphical representation that illustrates the distribution of a dataset. Unlike bar charts, which are typically used for categorical data, histograms are ideal for displaying continuous data, such as length measurements. Histograms are composed of bins, each representing a range of data values, and the height of each bin reflects the number of observations within that range.
+
+To create an accurate histogram, it is essential to ensure that the data is in a consistent unit of measurement. For instance, if your length data is recorded in millimeters, you should convert it to centimeters before proceeding. This step standardizes the data and facilitates a more meaningful analysis. Here’s how you can do this conversion in R:
+
+```{r}
+cisco_data[, length_cm := length / 10]
+```
+
+The code above converts the `length` measurements in the length column from millimeters to centimeters and stores the result in a new column named `length_cm` within the `cisco_data` data table.
+
+When creating a histogram, it is crucial to specify the class interval (bin width). While there is no strict rule for determining the optimal class interval, it is up to the researcher to select a value that effectively represents the data distribution. The chosen interval should be large enough to reveal meaningful patterns in the data but not so large that it obscures important details.
+
+```{r}
+class_interval <- 1
+```
+
+Suppose you decide on a class interval of 1 centimeter for your histogram. The next step is to bin the data accordingly. Binning organizes the data into discrete intervals (bins) of equal width, allowing for a clear visualization of the data distribution.
+
+Here’s how you can bin the data and create a histogram with a class interval of 1 centimeter in R:
+
+```{r}
+brks <- seq(0, ceiling(max(cisco_data$length_cm)), by = class_interval)
+cisco_data[, bins := cut(length_cm, brks, right = FALSE)]
+```
+
+The code above generates break points based on the specified class interval and bins the `length_cm` data accordingly, adding the `bin` information as a new column to the `cisco_data` data table.
+
+The next step is to compute the mid-lengths of the binned data. The following code achieves this by extracting the lower and upper limits of each bin and then calculating their midpoints.
+
+```{r}
+# Replace brackets
+# This line removes the square brackets [ and ) from the bins column, making it 
+# easier to split the bin ranges
+cisco_data[, bins := gsub("[\\[\\)]", "", bins)]
+  
+# Split bin ranges
+# This splits the cleaned bins column into two new columns: llimit (lower limit) 
+# and ulimit (upper limit) based on the comma delimiter.
+cisco_data[, c("llimit", "ulimit") := tstrsplit(bins, ",", fixed = TRUE)]
+  
+# Convert to numeric
+# This converts the llimit and ulimit columns from character to numeric type.
+cisco_data[, c("llimit", "ulimit") := lapply(.SD, as.numeric), .SDcols = c("llimit", "ulimit")]
+  
+# Calculate mid-lengths
+# This calculates the midpoint of each bin and stores it in a new column called
+# midlength.
+cisco_data[, midlength := (llimit + ulimit) / 2]
+```
+
+By setting the class interval boundaries midway between two numbers, we ensure that each data point falls squarely within a specific interval, avoiding ambiguity at the boundaries. This approach is crucial for accurately calculating the frequency of observations within each interval.
+
+With the general bin values calculated, we now need to incorporate species-specific information. When presenting a length frequency distribution as a histogram, it is common practice to add a vertical line representing the length-at-first maturity (Lm) of the species. This value can typically be found in databases such as FishBase.
+
+For the species *Coregonus artedii*, the length-at-first maturity (Lm) is 17.1 cm, as sourced from FishBase. 
+
+![](cisco-fishbase.png)
+
+```{r}
+cisco_lm_cm <- 17.1
+```
+
+For mega-spawners, let's assume their length is approximately 70% of the maximum length observed in our data. To estimate this, we simply multiply the maximum length by 0.7. While there are more precise methods to compute this value, we won't delve into them here or use them for calculation purposes.
+
+```{r}
+cisco_megaspawner <- (max(cisco_data$length_cm)) * 0.7
+```
+
+We can now create the graph. First, let's create a variable to store the title of our graph.
+
+```{r}
+my_title <- expression(paste("Length frequency distribution of Cisco (", italic("Coregonus artedi"), ")")) 
+```
+
+## Plotting
+
+Before proceeding, we'll identify the maximum frequency in our length data. This information will be useful for ensuring appropriate scaling in our subsequent plots. By calculating `maxFreq`, we obtain the maximum frequency of observations in our dataset, which helps us determine appropriate scaling and visualization settings when plotting histograms or other frequency distributions.
+
+```{r}
+# Extract the maximum frequency
+maxFreq <- max(hist(cisco_data$length_cm, breaks = brks, plot = FALSE)$counts)
+```
+
+These are the step-by-step procedures on how to make the histogram and add annotations.
+
+1. This code generates a histogram of the `length_cm` data from the `cisco_data` dataset. The `breaks = brks` argument specifies the bin breaks previously defined. `xlab`, `ylab`, and `main` are labels for the x-axis, y-axis, and main title of the plot, respectively. `col` sets the fill color of the bars, and `border` sets the border color of the bars.
+
+```{r, eval=FALSE}
+hist(cisco_data$length_cm, breaks = brks,
+     xlab = "Length (cm)", ylab = "Frequency", main = my_title,
+     col = "#cc0000", border = "white")
+```
+
+2. This code adds a rectangle to highlight the area representing juveniles in the histogram. `rect()` specifies the coordinates (xleft, ybottom, xright, ytop) for drawing the rectangle. `col` sets the fill color with transparency (alpha), and `border = NA` removes the border.
+
+```{r, eval=FALSE}
+rect(xleft = 0, ybottom = 0, xright = cisco_lm_cm, ytop = maxFreq + 50, col = rgb(0.4, 0.4, 0.4, alpha = 0.2), border = NA)
+```
+
+3. This code adds a rectangle to highlight the area representing megaspawners in the histogram. `cisco_megaspawner` is the position of the megaspawner, and `max(cisco_data$length_cm)` ensures the rectangle extends to the end of the histogram. 
+
+```{r, eval=FALSE}
+rect(xleft = cisco_megaspawner, ybottom = 0, xright = max(cisco_data$length_cm), ytop = maxFreq + 50, col = rgb(0.475, 0.851, 1, alpha = 0.2), border = NA)
+```
+
+4. This code adds text to label the area representing juveniles, mature, and megaspawners in the histogram. `text()` specifies the coordinates (x, y) where the text is positioned. `labels` sets the text content, and `cex` controls the text size relative to the default (default is 1).
+
+```{r, eval=FALSE}
+# Add a text indicating the are as juvenile
+text(x = 8, y = 500, labels = "Juvenile", cex = 0.8)
+
+# Add a text indicating the are as mature
+text(x = 23, y = 500, labels = "Mature", cex = 0.8)
+
+# Add a text indicating the are as megaspawner
+text(x = 33, y = 500, labels = "Megaspawner", cex = 0.8)
+```
+
+The output is shown at the end of this post.
+
+Adjust the coordinates, labels, colors, and sizes (`cex`) as needed to suit your specific data and presentation requirements.
+
+Here's the complete code:
+
+```{r}
+hist(cisco_data$length_cm, breaks = brks,
+     xlab = "Length (cm)", ylab = "Frequency", main = my_title,
+     col = "#cc0000", border = "white")
+
+# Add a rectangle for the juveniles
+rect(xleft = 0, ybottom = 0, xright = cisco_lm_cm, ytop = maxFreq + 50, 
+     col = rgb(0.4, 0.4, 0.4, alpha = 0.2), border = NA)
+
+# Add a rectangle for the megaspawner
+rect(xleft = cisco_megaspawner, ybottom = 0, xright = max(cisco_data$length_cm), 
+     ytop = maxFreq + 50, col = rgb(0.475, 0.851, 1, alpha = 0.2), border = NA)
+
+# Add a text indicating the are as juvenile
+text(x = 8, y = 500, labels = "Juvenile", cex = 0.8)
+
+# Add a text indicating the are as mature
+text(x = 23, y = 500, labels = "Mature", cex = 0.8)
+
+# Add a text indicating the are as megaspawner
+text(x = 33, y = 500, labels = "Megaspawner", cex = 0.8)
+```
+
+I hope you enjoy following the tutorial. Please note that you may need to adjust and re-run the codes several times to produce your desired graph.

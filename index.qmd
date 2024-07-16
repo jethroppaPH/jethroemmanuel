@@ -1,0 +1,45 @@
+---
+title: "Jethro Emmanuel"
+image: avatar.png
+about:
+  template: trestles
+  links:
+    - text: GitLab
+      icon: gitlab
+      url: "https://gitlab.com/jethroppaPH"
+    - text: GitHub
+      icon: github
+      url: "https://github.com/jethroppaPH"
+    - text: Email
+      url: "mailto:jethroemmanuel@gmail.com"
+    - text: Blog
+      url: "blog.html"
+    # - text: CV
+    #   url: "cv.pdf"
+comments: false
+---
+::: {.column-page}
+
+## About
+
+Welcome to my blog! I’m Jethro Emmanuel, and I love using technology to explore and visualize data. I’ll be sharing my experiences and knowledge here.
+
+I’m a big fan of open-source software, especially the R programming language and QGIS. As a Linux user, I value the freedom and customization that open-source tools provide.
+
+On this site I keep a list of [my publications](papers), as well as a [technical blog](blog.html).
+
+<p></p>
+
+## Selected Projects
+
+#### Publications
+
+**Reproductive biological performance of Otolithes ruber (Bloch and Schneider 1801) in San Miguel Bay, Philippines**. Lanzuela NSB, Gallego EM, and Baltar JEP. The Philippine Journal of Fisheries. 2020; 27(2):1-10. doi:https://doi.org/10.31398/tpjf/27.2.2019C0006
+
+#### R Packages
+
+**[fsaR](https://gitlab.com/jethroppaPH/fsaR)** | Fish Stock Assessment Utilities | 2023 
+
+<!-- ::: -->
+
+<!-- <link rel="me" href="https://fosstodon.org/@MikeMahoney218"> -->
