@@ -22,7 +22,7 @@
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>This is the third and final installment in our series on conducting a reproductive biology study of fish stocks. If you missed the earlier tutorials, you can find Part 1 <a href="https://jethroemmanuel.netlify.app/post/length-weight-relationship-using-r/">here</a> and Part 2 <a href="https://jethroemmanuel.netlify.app/post/visualizing-fish-gonadal-stages-with-r/">here</a>. As before, we will continue working with the same dataset to explore and visualize fish gonado-somatic index.</p>
+<p>This is the third and final installment in our series on conducting a reproductive biology study of fish stocks. If you missed the earlier tutorials, you can find Part 1 <a href="https://jethroemmanuel.netlify.app/posts/2023-01-16-length-weight-relationship-using-r/">here</a> and Part 2 <a href="https://jethroemmanuel.netlify.app/posts/2023-01-27-visualizing-fish-gonadal-stages-with-r/">here</a>. As before, we will continue working with the same dataset to explore and visualize fish gonado-somatic index.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
 background-color: null;
@@ -448,7 +448,7 @@ font-style: inherit;">TRUE</span>)</span></code></pre></div>
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>This tutorial continues from the previous one on conducting a reproductive biology study of fish stocks, which can be found <a href="https://jethroemmanuel.netlify.app/post/length-weight-relationship-using-r/">here</a>. In this session, we focus on plotting gonadal stages using the same dataset discussed earlier.</p>
+<p>This tutorial continues from the previous one on conducting a reproductive biology study of fish stocks, which can be found <a href="https://jethroemmanuel.netlify.app/posts/2023-01-16-length-weight-relationship-using-r/">here</a>. In this session, we focus on plotting gonadal stages using the same dataset discussed earlier.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
 background-color: null;

@@ -6,7 +6,7 @@ date: '2023-02-06'
 
 # Introduction
 
-This is the third and final installment in our series on conducting a reproductive biology study of fish stocks. If you missed the earlier tutorials, you can find Part 1 [here](https://jethroemmanuel.netlify.app/post/length-weight-relationship-using-r/) and Part 2 [here](https://jethroemmanuel.netlify.app/post/visualizing-fish-gonadal-stages-with-r/). As before, we will continue working with the same dataset to explore and visualize fish gonado-somatic index.
+This is the third and final installment in our series on conducting a reproductive biology study of fish stocks. If you missed the earlier tutorials, you can find Part 1 [here](https://jethroemmanuel.netlify.app/posts/2023-01-16-length-weight-relationship-using-r/) and Part 2 [here](https://jethroemmanuel.netlify.app/posts/2023-01-27-visualizing-fish-gonadal-stages-with-r/). As before, we will continue working with the same dataset to explore and visualize fish gonado-somatic index.
 
 ```{r}
 # Load the data.table package

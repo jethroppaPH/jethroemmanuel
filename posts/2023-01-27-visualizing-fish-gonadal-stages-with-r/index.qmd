@@ -6,7 +6,7 @@ date: '2023-01-27'
 
 # Introduction
 
-This tutorial continues from the previous one on conducting a reproductive biology study of fish stocks, which can be found [here](https://jethroemmanuel.netlify.app/post/length-weight-relationship-using-r/). In this session, we focus on plotting gonadal stages using the same dataset discussed earlier.
+This tutorial continues from the previous one on conducting a reproductive biology study of fish stocks, which can be found [here](https://jethroemmanuel.netlify.app/posts/2023-01-16-length-weight-relationship-using-r/). In this session, we focus on plotting gonadal stages using the same dataset discussed earlier.
 
 ```{r}
 # Load the data.table package
