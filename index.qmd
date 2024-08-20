@@ -28,6 +28,8 @@ I’m a big fan of open-source software, especially the R programming language a
 
 On this site I keep a list of [my publications](papers), as well as a [technical blog](blog.html).
 
+For my QGIS projects, I primarily share updates on my Facebook page [here](https://web.facebook.com/becoolmaps/).
+
 <p></p>
 
 ## Selected Projects
